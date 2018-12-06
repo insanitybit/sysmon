@@ -86,7 +86,6 @@ pub struct ProcessCreateEvent {
     parent_command_line: String,
 }
 
-
 #[derive(Debug, FromHtml)]
 pub struct FileCreateEvent {
     #[html(selector = "System")]
@@ -113,7 +112,7 @@ pub struct FileCreateEvent {
 
 
 #[derive(Debug, FromHtml)]
-struct NetworkEvent {
+pub struct NetworkEvent {
     #[html(selector = "System")]
     header: SysmonSystemHeader,
 
