@@ -1,10 +1,9 @@
 #[macro_use]
 extern crate unhtml_derive;
 extern crate unhtml;
-use unhtml::*;
 
 #[derive(Debug, FromHtml)]
-struct SysmonSystemHeader {
+pub struct SysmonSystemHeader {
     #[html(selector = "System > Provider", attr = "name")]
     provider_name: String,
     #[html(selector = "System > Provider", attr = "guid")]
@@ -34,7 +33,7 @@ struct SysmonSystemHeader {
 }
 
 #[derive(Debug, FromHtml)]
-struct ProcessCreateEvent {
+pub struct ProcessCreateEvent {
     #[html(selector = "System")]
     header: SysmonSystemHeader,
 
@@ -89,7 +88,7 @@ struct ProcessCreateEvent {
 
 
 #[derive(Debug, FromHtml)]
-struct FileCreateEvent {
+pub struct FileCreateEvent {
     #[html(selector = "System")]
     header: SysmonSystemHeader,
 
