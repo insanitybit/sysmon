@@ -1,0 +1,8 @@
+[package]
+name = "sysmon"
+version = "0.1.0"
+authors = ["Insanitybit <insanitybit@gmail.com>"]
+
+[dependencies]
+unhtml = "0.1.1"
+unhtml_derive = "0.2.1"
