@@ -14,3 +14,5 @@ readme = "README.md"
 unhtml = "0.1.1"
 unhtml_derive = "0.2.1"
 failure = "0.1.3"
+derive_is_enum_variant = "0.1.1"
+sysmon = { path = "." }

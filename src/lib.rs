@@ -1,4 +1,7 @@
 #[macro_use]
+extern crate derive_is_enum_variant;
+
+#[macro_use]
 extern crate failure;
 
 #[macro_use]
@@ -10,37 +13,45 @@ use unhtml::FromHtml;
 use failure::Error;
 
 #[derive(Debug, Clone)]
-enum EventType {
-    ProcessCreate,
-    FileCreate,
-    InboundNetwork,
-    OutboundNetwork,
+#[derive(is_enum_variant)]
+enum Event {
+    ProcessCreate(ProcessCreateEvent),
+    FileCreate(FileCreateEvent),
+    InboundNetwork(NetworkEvent),
+    OutboundNetwork(NetworkEvent),
 }
 
-#[derive(Debug, FromHtml)]
+#[derive(Debug, FromHtml, Clone)]
 struct Type {
     #[html(selector = "EventID", attr = "inner")]
     _type: u8
 }
 
-#[derive(Debug, FromHtml)]
+#[derive(Debug, FromHtml, Clone)]
 struct NetworkType {
     #[html(selector = "EventData > Data[Name=\"Initiated\"]", attr="inner")]
     _type: bool
 }
 
-impl EventType {
+impl Event {
     pub fn from_str(s: &str) -> Result<Self, Error> {
         let event_type = Type::from_html(s)?._type;
 
         match event_type {
-            1 => Ok(EventType::ProcessCreate),
-            11 => Ok(EventType::FileCreate),
+            1 => {
+                let event = ProcessCreateEvent::from_html(s)?;
+                Ok(Event::ProcessCreate(event))
+            },
+            11 => {
+                let event = FileCreateEvent::from_html(s)?;
+                Ok(Event::FileCreate(event))
+            },
             3 => {
+                let event = NetworkEvent::from_html(s)?;
                 if NetworkType::from_html(s)?._type {
-                    Ok(EventType::OutboundNetwork)
+                    Ok(Event::OutboundNetwork(event))
                 } else {
-                    Ok(EventType::InboundNetwork)
+                    Ok(Event::InboundNetwork(event))
                 }
             },
             _ => bail!("Unsupported event type! {}", event_type)
@@ -49,7 +60,7 @@ impl EventType {
     }
 }
 
-#[derive(Debug, FromHtml)]
+#[derive(Debug, FromHtml, Clone)]
 pub struct SysmonSystemHeader {
     #[html(selector = "System > Provider", attr = "name")]
     provider_name: String,
@@ -79,7 +90,7 @@ pub struct SysmonSystemHeader {
     sid: String
 }
 
-#[derive(Debug, FromHtml)]
+#[derive(Debug, FromHtml, Clone)]
 pub struct ProcessCreateEvent {
     #[html(selector = "System")]
     header: SysmonSystemHeader,
@@ -133,7 +144,7 @@ pub struct ProcessCreateEvent {
     parent_command_line: String,
 }
 
-#[derive(Debug, FromHtml)]
+#[derive(Debug, FromHtml, Clone)]
 pub struct FileCreateEvent {
     #[html(selector = "System")]
     header: SysmonSystemHeader,
@@ -158,7 +169,7 @@ pub struct FileCreateEvent {
 }
 
 
-#[derive(Debug, FromHtml)]
+#[derive(Debug, FromHtml, Clone)]
 pub struct NetworkEvent {
     #[html(selector = "System")]
     header: SysmonSystemHeader,
@@ -346,10 +357,10 @@ mod tests {
 
     #[test]
     fn event_type() {
-        EventType::from_str(NETWORK_EVENT).unwrap();
+        assert!(Event::from_str(NETWORK_EVENT).unwrap().is_outbound_network());
+        assert!(Event::from_str(FILE_CREATE).unwrap().is_file_create());
+        assert!(Event::from_str(PROCESS_CREATE).unwrap().is_process_create());
     }
-
-
 }
 
 
