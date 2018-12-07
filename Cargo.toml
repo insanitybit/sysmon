@@ -13,3 +13,4 @@ readme = "README.md"
 [dependencies]
 unhtml = "0.1.1"
 unhtml_derive = "0.2.1"
+failure = "0.1.3"

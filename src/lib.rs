@@ -1,6 +1,53 @@
 #[macro_use]
+extern crate failure;
+
+#[macro_use]
 extern crate unhtml_derive;
+
 extern crate unhtml;
+
+use unhtml::FromHtml;
+use failure::Error;
+
+#[derive(Debug, Clone)]
+enum EventType {
+    ProcessCreate,
+    FileCreate,
+    InboundNetwork,
+    OutboundNetwork,
+}
+
+#[derive(Debug, FromHtml)]
+struct Type {
+    #[html(selector = "EventID", attr = "inner")]
+    _type: u8
+}
+
+#[derive(Debug, FromHtml)]
+struct NetworkType {
+    #[html(selector = "EventData > Data[Name=\"Initiated\"]", attr="inner")]
+    _type: bool
+}
+
+impl EventType {
+    pub fn from_str(s: &str) -> Result<Self, Error> {
+        let event_type = Type::from_html(s)?._type;
+
+        match event_type {
+            1 => Ok(EventType::ProcessCreate),
+            11 => Ok(EventType::FileCreate),
+            3 => {
+                if NetworkType::from_html(s)?._type {
+                    Ok(EventType::OutboundNetwork)
+                } else {
+                    Ok(EventType::InboundNetwork)
+                }
+            },
+            _ => bail!("Unsupported event type! {}", event_type)
+        }
+
+    }
+}
 
 #[derive(Debug, FromHtml)]
 pub struct SysmonSystemHeader {
@@ -135,7 +182,7 @@ pub struct NetworkEvent {
     protocol: String,
 
     #[html(selector = "EventData > Data[Name=\"Initiated\"]", attr="inner")]
-    initiated: String,
+    initiated: bool,
 
     #[html(selector = "EventData > Data[Name=\"SourceIsIpv6\"]", attr="inner")]
     source_is_ipv6: String,
@@ -296,6 +343,13 @@ mod tests {
     fn network_event() {
         NetworkEvent::from_html(NETWORK_EVENT).unwrap();
     }
+
+    #[test]
+    fn event_type() {
+        EventType::from_str(NETWORK_EVENT).unwrap();
+    }
+
+
 }
 
 
