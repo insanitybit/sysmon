@@ -135,7 +135,7 @@ pub struct ProcessCreateEvent {
     pub parent_process_guid: String,
 
     #[html(selector = "EventData > Data[Name=\"ParentProcessId\"]", attr="inner")]
-    pub parent_process_id: String,
+    pub parent_process_id: u64,
 
     #[html(selector = "EventData > Data[Name=\"ParentImage\"]", attr="inner")]
     pub parent_image: String,
@@ -156,7 +156,7 @@ pub struct FileCreateEvent {
     pub process_guid: String,
 
     #[html(selector = "EventData > Data[Name=\"ProcessId\"]", attr="inner")]
-    pub process_id: String,
+    pub process_id: u64,
 
     #[html(selector = "EventData > Data[Name=\"Image\"]", attr="inner")]
     pub image: String,
@@ -181,7 +181,7 @@ pub struct NetworkEvent {
     pub process_guid: String,
 
     #[html(selector = "EventData > Data[Name=\"ProcessId\"]", attr="inner")]
-    pub process_id: String,
+    pub process_id: u64,
 
     #[html(selector = "EventData > Data[Name=\"Image\"]", attr="inner")]
     pub image: String,
@@ -205,7 +205,7 @@ pub struct NetworkEvent {
     pub source_hostname: String,
 
     #[html(selector = "EventData > Data[Name=\"SourcePort\"]", attr="inner")]
-    pub source_port: String,
+    pub source_port: u16,
 
     #[html(selector = "EventData > Data[Name=\"SourcePortName\"]", attr="inner")]
     pub source_port_name: String,
@@ -220,7 +220,7 @@ pub struct NetworkEvent {
     pub destination_hostname: String,
 
     #[html(selector = "EventData > Data[Name=\"DestinationPort\"]", attr="inner")]
-    pub destination_port: String,
+    pub destination_port: u16,
 
     #[html(selector = "EventData > Data[Name=\"DestinationPortName\"]", attr="inner")]
     pub destination_port_name: String,
