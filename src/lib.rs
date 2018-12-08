@@ -93,137 +93,137 @@ pub struct SysmonSystemHeader {
 #[derive(Debug, FromHtml, Clone)]
 pub struct ProcessCreateEvent {
     #[html(selector = "System")]
-    header: SysmonSystemHeader,
+    pub header: SysmonSystemHeader,
 
     #[html(selector = "EventData > Data[Name=\"UtcTime\"]", attr="inner")]
-    utc_time: String,
+    pub utc_time: String,
 
     #[html(selector = "EventData > Data[Name=\"ProcessGuid\"]", attr="inner")]
-    process_guid: String,
+    pub process_guid: String,
 
     #[html(selector = "EventData > Data[Name=\"ProcessId\"]", attr="inner")]
-    process_id: u32,
+    pub process_id: u32,
 
     #[html(selector = "EventData > Data[Name=\"Image\"]", attr="inner")]
-    image: String,
+    pub image: String,
 
     #[html(selector = "EventData > Data[Name=\"CommandLine\"]", attr="inner")]
-    command_line: String,
+    pub command_line: String,
 
     #[html(selector = "EventData > Data[Name=\"CurrentDirectory\"]", attr="inner")]
-    current_directory: String,
+    pub current_directory: String,
 
     #[html(selector = "EventData > Data[Name=\"User\"]", attr="inner")]
-    user: String,
+    pub user: String,
 
     #[html(selector = "EventData > Data[Name=\"LogonGuid\"]", attr="inner")]
-    logon_guid: String,
+    pub logon_guid: String,
 
     #[html(selector = "EventData > Data[Name=\"LogonId\"]", attr="inner")]
-    logon_id: String,
+    pub logon_id: String,
 
     #[html(selector = "EventData > Data[Name=\"TerminalSessionId\"]", attr="inner")]
-    terminal_session_id: u16,
+    pub terminal_session_id: u16,
 
     #[html(selector = "EventData > Data[Name=\"IntegrityLevel\"]", attr="inner")]
-    integrity_level: String,
+    pub integrity_level: String,
 
     #[html(selector = "EventData > Data[Name=\"Hashes\"]", attr="inner")]
-    hashes: String,
+    pub hashes: String,
 
     #[html(selector = "EventData > Data[Name=\"ParentProcessGuid\"]", attr="inner")]
-    parent_process_guid: String,
+    pub parent_process_guid: String,
 
     #[html(selector = "EventData > Data[Name=\"ParentProcessId\"]", attr="inner")]
-    parent_process_id: String,
+    pub parent_process_id: String,
 
     #[html(selector = "EventData > Data[Name=\"ParentImage\"]", attr="inner")]
-    parent_image: String,
+    pub parent_image: String,
 
     #[html(selector = "[Name=\"ParentCommandLine\"]", attr="inner")]
-    parent_command_line: String,
+    pub parent_command_line: String,
 }
 
 #[derive(Debug, FromHtml, Clone)]
 pub struct FileCreateEvent {
     #[html(selector = "System")]
-    header: SysmonSystemHeader,
+    pub header: SysmonSystemHeader,
 
     #[html(selector = "EventData > Data[Name=\"UtcTime\"]", attr="inner")]
-    utc_time: String,
+    pub utc_time: String,
 
     #[html(selector = "EventData > Data[Name=\"ProcessGuid\"]", attr="inner")]
-    process_guid: String,
+    pub process_guid: String,
 
     #[html(selector = "EventData > Data[Name=\"ProcessId\"]", attr="inner")]
-    process_id: String,
+    pub process_id: String,
 
     #[html(selector = "EventData > Data[Name=\"Image\"]", attr="inner")]
-    image: String,
+    pub image: String,
 
     #[html(selector = "EventData > Data[Name=\"TargetFilename\"]", attr="inner")]
-    target_filename: String,
+    pub target_filename: String,
 
     #[html(selector = "EventData > Data[Name=\"CreationUtcTime\"]", attr="inner")]
-    creation_utc_time: String,
+    pub creation_utc_time: String,
 }
 
 
 #[derive(Debug, FromHtml, Clone)]
 pub struct NetworkEvent {
     #[html(selector = "System")]
-    header: SysmonSystemHeader,
+    pub header: SysmonSystemHeader,
 
     #[html(selector = "EventData > Data[Name=\"UtcTime\"]", attr="inner")]
-    utc_time: String,
+    pub utc_time: String,
 
     #[html(selector = "EventData > Data[Name=\"ProcessGuid\"]", attr="inner")]
-    process_guid: String,
+    pub process_guid: String,
 
     #[html(selector = "EventData > Data[Name=\"ProcessId\"]", attr="inner")]
-    process_id: String,
+    pub process_id: String,
 
     #[html(selector = "EventData > Data[Name=\"Image\"]", attr="inner")]
-    image: String,
+    pub image: String,
 
     #[html(selector = "EventData > Data[Name=\"User\"]", attr="inner")]
-    user: String,
+    pub user: String,
 
     #[html(selector = "EventData > Data[Name=\"Protocol\"]", attr="inner")]
-    protocol: String,
+    pub protocol: String,
 
     #[html(selector = "EventData > Data[Name=\"Initiated\"]", attr="inner")]
-    initiated: bool,
+    pub initiated: bool,
 
     #[html(selector = "EventData > Data[Name=\"SourceIsIpv6\"]", attr="inner")]
-    source_is_ipv6: String,
+    pub source_is_ipv6: String,
 
     #[html(selector = "EventData > Data[Name=\"SourceIp\"]", attr="inner")]
-    source_ip: String,
+    pub source_ip: String,
 
     #[html(selector = "EventData > Data[Name=\"SourceHostname\"]", attr="inner")]
-    source_hostname: String,
+    pub source_hostname: String,
 
     #[html(selector = "EventData > Data[Name=\"SourcePort\"]", attr="inner")]
-    source_port: String,
+    pub source_port: String,
 
     #[html(selector = "EventData > Data[Name=\"SourcePortName\"]", attr="inner")]
-    source_port_name: String,
+    pub source_port_name: String,
 
     #[html(selector = "EventData > Data[Name=\"DestinationIsIpv6\"]", attr="inner")]
-    destination_is_ipv6: String,
+    pub destination_is_ipv6: String,
 
     #[html(selector = "EventData > Data[Name=\"DestinationIp\"]", attr="inner")]
-    destination_ip: String,
+    pub destination_ip: String,
 
     #[html(selector = "EventData > Data[Name=\"DestinationHostname\"]", attr="inner")]
-    destination_hostname: String,
+    pub destination_hostname: String,
 
     #[html(selector = "EventData > Data[Name=\"DestinationPort\"]", attr="inner")]
-    destination_port: String,
+    pub destination_port: String,
 
     #[html(selector = "EventData > Data[Name=\"DestinationPortName\"]", attr="inner")]
-    destination_port_name: String,
+    pub destination_port_name: String,
 }
 
 
