@@ -63,31 +63,31 @@ impl Event {
 #[derive(Debug, FromHtml, Clone)]
 pub struct SysmonSystemHeader {
     #[html(selector = "System > Provider", attr = "name")]
-    provider_name: String,
+    pub provider_name: String,
     #[html(selector = "System > Provider", attr = "guid")]
-    provider_guid: String,
+    pub provider_guid: String,
     #[html(selector = "EventID", attr = "inner")]
-    event_id: u8,
+    pub event_id: u8,
     #[html(selector = "Version", attr = "inner")]
-    version: u8,
+    pub version: u8,
     #[html(selector = "Level", attr = "inner")]
-    level: u8,
+    pub level: u8,
     #[html(selector = "Task", attr = "inner")]
-    task: u8,
+    pub task: u8,
     #[html(selector = "Opcode", attr = "inner")]
-    opcode: u8,
+    pub opcode: u8,
     #[html(selector = "Keywords", attr = "inner")]
-    keywords: String,
+    pub keywords: String,
     #[html(selector = "TimeCreated", attr="systemtime")]
-    time_created: String,
+    pub time_created: String,
     #[html(selector = "EventRecordID", attr = "inner")]
-    event_record_id: u32,
+    pub event_record_id: u32,
     #[html(selector = "Channel", attr = "inner")]
-    channel: String,
+    pub channel: String,
     #[html(selector = "Computer", attr = "inner")]
-    computer: String,
+    pub computer: String,
     #[html(selector = "Security", attr="userid")]
-    sid: String
+    pub sid: String
 }
 
 #[derive(Debug, FromHtml, Clone)]
