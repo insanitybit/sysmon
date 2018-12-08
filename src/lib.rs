@@ -14,7 +14,7 @@ use failure::Error;
 
 #[derive(Debug, Clone)]
 #[derive(is_enum_variant)]
-enum Event {
+pub enum Event {
     ProcessCreate(ProcessCreateEvent),
     FileCreate(FileCreateEvent),
     InboundNetwork(NetworkEvent),
