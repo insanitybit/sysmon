@@ -34,21 +34,21 @@ struct NetworkType {
 }
 
 impl Event {
-    pub fn from_str(s: &str) -> Result<Self, Error> {
-        let event_type = Type::from_html(s)?._type;
+    pub fn from_str(s: impl AsRef<str>) -> Result<Self, Error> {
+        let event_type = Type::from_html(s.as_ref())?._type;
 
         match event_type {
             1 => {
-                let event = ProcessCreateEvent::from_html(s)?;
+                let event = ProcessCreateEvent::from_html(s.as_ref())?;
                 Ok(Event::ProcessCreate(event))
             },
             11 => {
-                let event = FileCreateEvent::from_html(s)?;
+                let event = FileCreateEvent::from_html(s.as_ref())?;
                 Ok(Event::FileCreate(event))
             },
             3 => {
-                let event = NetworkEvent::from_html(s)?;
-                if NetworkType::from_html(s)?._type {
+                let event = NetworkEvent::from_html(s.as_ref())?;
+                if NetworkType::from_html(s.as_ref())?._type {
                     Ok(Event::OutboundNetwork(event))
                 } else {
                     Ok(Event::InboundNetwork(event))
