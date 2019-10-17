@@ -445,7 +445,7 @@ pub struct NetworkEventData {
     pub process_guid: ProcessGuid,
     pub process_id: u64,
     pub image: Image,
-    pub user: User,
+    pub user: Option<User>,
     pub protocol: String,
     pub initiated: bool,
     pub source_is_ipv6: String,
@@ -476,15 +476,18 @@ impl TryFrom<IntermediaryEventData> for ProcessCreateEventData {
 
         for data in inter.data {
             if let Some(value) = data.value {
+//                if (value == "4") {
+//                    panic!("{} {}", data.name, value.len());
+//                }
                 m.insert(data.name, value);
             }
         }
 
         let process_id = get_or_err!(m, "ProcessId");
-        let process_id = process_id[1..process_id.len() - 1].parse()?;
+        let process_id: u64 = process_id.parse()?;
 
         let parent_process_id = get_or_err!(m, "ParentProcessId");
-        let parent_process_id = parent_process_id[1..parent_process_id.len() - 1].parse()?;
+        let parent_process_id: u64 = parent_process_id.parse()?;
 
 
         Ok(
@@ -529,7 +532,7 @@ impl TryFrom<IntermediaryEventData> for FileCreateEventData {
         }
 
         let process_id = get_or_err!(m, "ProcessId");
-        let process_id = process_id[1..process_id.len() - 1].parse()?;
+        let process_id = process_id.parse()?;
 
         Ok(
             FileCreateEventData {
@@ -558,6 +561,10 @@ impl TryFrom<IntermediaryEventData> for NetworkEventData {
             }
         }
 
+        dbg!(&m);
+
+        let user = m.remove("User")
+            .map(|user| User { user });
 
         Ok(
             NetworkEventData {
@@ -567,7 +574,7 @@ impl TryFrom<IntermediaryEventData> for NetworkEventData {
                 },
                 process_id: get_or_err!(m, "ProcessId").parse()?,
                 image: Image { image: get_or_err!(m, "Image") },
-                user: User { user: get_or_err!(m, "User") },
+                user,
                 protocol: get_or_err!(m, "Protocol"),
                 source_is_ipv6: get_or_err!(m, "SourceIsIpv6"),
                 source_ip: get_or_err!(m, "SourceIp"),
@@ -614,6 +621,8 @@ pub struct IntermediaryEventData {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs::File;
+    use std::io::{BufReader, BufRead};
 
     const NETWORK_EVENT: &str = r#"
     <Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
@@ -742,31 +751,49 @@ mod tests {
         </System>
     "#;
 
-    #[test]
-    fn header() {
-        serde_xml_rs::from_str::<System>(HEADER).unwrap();
-    }
+//    #[test]
+//    fn header() {
+//        serde_xml_rs::from_str::<System>(HEADER).unwrap();
+//    }
+//
+//    #[test]
+//    fn process_create_event() {
+//        serde_xml_rs::from_str::<ProcessCreateEvent>(PROCESS_CREATE).unwrap();
+//    }
+//
+//    #[test]
+//    fn file_create_event() {
+//        serde_xml_rs::from_str::<FileCreateEvent>(FILE_CREATE).unwrap();
+//    }
+//
+//    #[test]
+//    fn network_event() {
+//        serde_xml_rs::from_str::<NetworkEvent>(NETWORK_EVENT).unwrap();
+//    }
+//
+//    #[test]
+//    fn event_type() {
+//        assert!(Event::from_str(NETWORK_EVENT).unwrap().is_outbound_network());
+//        assert!(Event::from_str(FILE_CREATE).unwrap().is_file_create());
+//        assert!(Event::from_str(PROCESS_CREATE).unwrap().is_process_create());
+//    }
 
     #[test]
-    fn process_create_event() {
-        serde_xml_rs::from_str::<ProcessCreateEvent>(PROCESS_CREATE).unwrap();
-    }
+    fn parse_all() -> Result<()> {
+        let reader = BufReader::new(File::open("./test_data/events6.xml")?);
 
-    #[test]
-    fn file_create_event() {
-        serde_xml_rs::from_str::<FileCreateEvent>(FILE_CREATE).unwrap();
-    }
+        for event in reader.lines() {
+            if let Ok(event) = event {
+                if event.contains("EventID>1<") || event.contains("EventID>3<")  || event.contains("EventID>11<") {
+                    let parsed: Result<Event, _> = Event::from_str(&event);
+                    if let Err(e) = parsed {
+                        Err(e)?;
+                    }
+                }
+            }
+        }
 
-    #[test]
-    fn network_event() {
-        serde_xml_rs::from_str::<NetworkEvent>(NETWORK_EVENT).unwrap();
-    }
-
-    #[test]
-    fn event_type() {
-        assert!(Event::from_str(NETWORK_EVENT).unwrap().is_outbound_network());
-        assert!(Event::from_str(FILE_CREATE).unwrap().is_file_create());
-        assert!(Event::from_str(PROCESS_CREATE).unwrap().is_process_create());
+        Ok(())
     }
 }
 
