@@ -8,18 +8,14 @@ extern crate serde_derive;
 extern crate serde_xml_rs;
 extern crate uuid;
 
-use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::error::Error;
-use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use chrono::prelude::*;
 use failure::_core::ops::Deref;
 use serde::{Deserialize, Deserializer};
 use serde::de::Error as SerdeError;
-
 
 macro_rules! get_or_err {
     ($map:ident, $field_name:expr) => {
@@ -72,16 +68,6 @@ impl Event {
             )
             .map_err(|e| anyhow!("Error : {:?} {}", e, s))
     }
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Type {
-    pub _type: u8
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct NetworkType {
-    pub _type: bool
 }
 
 
