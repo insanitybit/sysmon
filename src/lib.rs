@@ -1,16 +1,45 @@
+extern crate anyhow;
+extern crate chrono;
 #[macro_use]
 extern crate derive_is_enum_variant;
-
+extern crate serde;
 #[macro_use]
-extern crate failure;
+extern crate serde_derive;
+extern crate serde_xml_rs;
+extern crate uuid;
 
-#[macro_use]
-extern crate unhtml_derive;
+use std::collections::hash_map::RandomState;
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::error::Error;
+use std::str::FromStr;
 
-extern crate unhtml;
+use anyhow::{anyhow, Result};
+use chrono::prelude::*;
+use failure::_core::ops::Deref;
+use serde::{Deserialize, Deserializer};
+use serde::de::Error as SerdeError;
 
-use unhtml::FromHtml;
-use failure::Error;
+
+macro_rules! get_or_err {
+    ($map:ident, $field_name:expr) => {
+
+        match $map.remove($field_name) {
+            Some(field) => field,
+            None => return Err(anyhow!("No field: {}", $field_name))
+        }
+
+    };
+
+    ($map:ident, $field_name:expr, $maperr:expr) => {
+
+        match $map.remove($field_name) {
+            Some(field) => field,
+            None => return Err(anyhow!("No field: {}", $field_name)).map_err($maperr)
+        }
+
+    };
+}
 
 #[derive(Debug, Clone)]
 #[derive(is_enum_variant)]
@@ -21,215 +50,583 @@ pub enum Event {
     OutboundNetwork(NetworkEvent),
 }
 
-#[derive(Debug, FromHtml, Clone)]
-struct Type {
-    #[html(selector = "EventID", attr = "inner")]
-    _type: u8
-}
-
-#[derive(Debug, FromHtml, Clone)]
-struct NetworkType {
-    #[html(selector = "EventData > Data[Name=\"Initiated\"]", attr="inner")]
-    _type: bool
-}
-
 impl Event {
-    pub fn from_str(s: impl AsRef<str>) -> Result<Self, Error> {
-        let event_type = Type::from_html(s.as_ref())?._type;
+    pub fn from_str(s: impl AsRef<str>) -> Result<Self> {
+        let s = s.as_ref();
+        serde_xml_rs::from_str::<ProcessCreateEvent>(s)
+            .map(|p| Event::ProcessCreate(p))
+            .or_else(|_|
+                serde_xml_rs::from_str::<FileCreateEvent>(s)
+                    .map(|f| Event::FileCreate(f))
+            )
+            .or_else(|_|
+                serde_xml_rs::from_str::<NetworkEvent>(s)
+                    .map(|n| {
+                        if n.event_data.initiated {
+                           Event::OutboundNetwork(n)
 
-        match event_type {
-            1 => {
-                let event = ProcessCreateEvent::from_html(s.as_ref())?;
-                Ok(Event::ProcessCreate(event))
-            },
-            11 => {
-                let event = FileCreateEvent::from_html(s.as_ref())?;
-                Ok(Event::FileCreate(event))
-            },
-            3 => {
-                let event = NetworkEvent::from_html(s.as_ref())?;
-                if NetworkType::from_html(s.as_ref())?._type {
-                    Ok(Event::OutboundNetwork(event))
-                } else {
-                    Ok(Event::InboundNetwork(event))
-                }
-            },
-            _ => bail!("Unsupported event type! {}", event_type)
-        }
+                        } else {
+                           Event::InboundNetwork(n)
+                        }
+                    })
+            )
+            .map_err(|e| anyhow!("Error : {:?} {}", e, s))
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Type {
+    pub _type: u8
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct NetworkType {
+    pub _type: bool
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Provider {
+    #[serde(rename = "Name")]
+    pub provider_name: String,
+    #[serde(rename = "Guid")]
+    pub provider_guid: String,
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct EventId {
+    #[serde(rename = "$value")]
+    pub event_id: u8,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Level {
+    #[serde(rename = "$value")]
+    pub level: String,
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Task {
+    #[serde(rename = "$value")]
+    pub task: String,
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Version {
+    #[serde(rename = "$value")]
+    pub version: String,
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Opcode {
+    #[serde(rename = "$value")]
+    pub opcode: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Keywords {
+    #[serde(rename = "$value")]
+    pub keywords: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct TimeCreated {
+    #[serde(rename = "SystemTime")]
+    pub system_time: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct EventRecordId {
+    #[serde(rename = "$value")]
+    pub event_record_id: u32,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Execution {
+    #[serde(rename = "ProcessID")]
+    pub process_id: String,
+    #[serde(rename = "ThreadID")]
+    pub thread_id: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Channel {
+    #[serde(rename = "$value")]
+    pub value: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Computer {
+    #[serde(rename = "$value")]
+    pub computer: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Security {
+    #[serde(rename = "UserID")]
+    pub security: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct System {
+    /// <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385F-C22A-43E0-BF4C-06F5698FFBD9}" />
+    #[serde(rename = "Provider")]
+    pub provider: Provider,
+    /// <EventID>1</EventID>
+    #[serde(rename = "EventID")]
+    pub event_id: EventId,
+    /// <Version>5</Version>
+    #[serde(rename = "Version")]
+    pub version: Version,
+    /// <Level>4</Level>
+    #[serde(rename = "Level")]
+    pub level: Level,
+    /// <Task>1</Task>
+    #[serde(rename = "Task")]
+    pub task: Task,
+    /// <Opcode>0</Opcode>
+    #[serde(rename = "Opcode")]
+    pub opcode: Opcode,
+    /// <Keywords>0x8000000000000000</Keywords>
+    #[serde(rename = "Keywords")]
+    pub keywords: Keywords,
+    /// <TimeCreated SystemTime="2017-04-28T22:08:22.025812200Z" />
+    #[serde(rename = "TimeCreated")]
+    pub time_created: TimeCreated,
+    /// <EventRecordID>9947</EventRecordID>
+    #[serde(rename = "EventRecordID")]
+    pub event_record_id: EventRecordId,
+    /// <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+    /// <Execution ProcessID="3216" ThreadID="3964" />
+    #[serde(rename = "Execution")]
+    pub execution: Execution,
+    /// <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+    #[serde(rename = "Channel")]
+    pub channel: Channel,
+    /// <Computer>rfsH.lab.local</Computer>
+    #[serde(rename = "Computer")]
+    pub computer: Computer,
+    /// <Security UserID="S-1-5-18" />
+    #[serde(rename = "Security")]
+    pub security: Security,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct UtcTime {
+    #[serde(rename = "$value")]
+    pub utc_time: String
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct ProcessGuid {
+    pub process_guid: uuid::Uuid,
+}
+
+impl ProcessGuid {
+    pub fn get_creation_timestamp(&self) -> u64 {
+        let guid = self.process_guid.as_bytes();
+
+        const OFF: usize = 4;
+
+        // big endian :|
+        let b = [guid[OFF + 1], guid[OFF], guid[OFF + 3], guid[OFF + 2]];
+
+        let ts = i32::from_le_bytes(b);
+        Utc.timestamp(ts as i64, 0).timestamp() as u64
 
     }
 }
 
-#[derive(Debug, FromHtml, Clone)]
-pub struct SysmonSystemHeader {
-    #[html(selector = "System > Provider", attr = "name")]
-    pub provider_name: String,
-    #[html(selector = "System > Provider", attr = "guid")]
-    pub provider_guid: String,
-    #[html(selector = "EventID", attr = "inner")]
-    pub event_id: u8,
-    #[html(selector = "Version", attr = "inner")]
-    pub version: u8,
-    #[html(selector = "Level", attr = "inner")]
-    pub level: u8,
-    #[html(selector = "Task", attr = "inner")]
-    pub task: u8,
-    #[html(selector = "Opcode", attr = "inner")]
-    pub opcode: u8,
-    #[html(selector = "Keywords", attr = "inner")]
-    pub keywords: String,
-    #[html(selector = "TimeCreated", attr="systemtime")]
-    pub time_created: String,
-    #[html(selector = "EventRecordID", attr = "inner")]
-    pub event_record_id: u32,
-    #[html(selector = "Channel", attr = "inner")]
-    pub channel: String,
-    #[html(selector = "Computer", attr = "inner")]
-    pub computer: String,
-    #[html(selector = "Security", attr="userid")]
-    pub sid: String
+#[derive(Debug, Deserialize, Clone)]
+pub struct ProcessId {
+    pub process_id: u64,
 }
 
-#[derive(Debug, FromHtml, Clone)]
-pub struct ProcessCreateEvent {
-    #[html(selector = "System")]
-    pub header: SysmonSystemHeader,
+impl Deref for ProcessId {
+    type Target = u64;
 
-    #[html(selector = "EventData > Data[Name=\"UtcTime\"]", attr="inner")]
-    pub utc_time: String,
+    fn deref(&self) -> &u64 {
+        &self.process_id
+    }
+}
 
-    #[html(selector = "EventData > Data[Name=\"ProcessGuid\"]", attr="inner")]
-    pub process_guid: String,
-
-    #[html(selector = "EventData > Data[Name=\"ProcessId\"]", attr="inner")]
-    pub process_id: u32,
-
-    #[html(selector = "EventData > Data[Name=\"Image\"]", attr="inner")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct Image {
     pub image: String,
+}
 
-    #[html(selector = "EventData > Data[Name=\"CommandLine\"]", attr="inner")]
+impl Deref for Image {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.image
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct CommandLine {
     pub command_line: String,
+}
 
-    #[html(selector = "EventData > Data[Name=\"CurrentDirectory\"]", attr="inner")]
+impl Deref for CommandLine {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.command_line
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct CurrentDirectory {
     pub current_directory: String,
+}
 
-    #[html(selector = "EventData > Data[Name=\"User\"]", attr="inner")]
+impl Deref for CurrentDirectory {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.current_directory
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct User {
     pub user: String,
+}
 
-    #[html(selector = "EventData > Data[Name=\"LogonGuid\"]", attr="inner")]
-    pub logon_guid: String,
+impl Deref for User {
+    type Target = str;
 
-    #[html(selector = "EventData > Data[Name=\"LogonId\"]", attr="inner")]
+    fn deref(&self) -> &str {
+        &self.user
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct LogonGuid {
+    pub logon_guid: uuid::Uuid,
+}
+
+impl Deref for LogonGuid {
+    type Target = uuid::Uuid;
+
+    fn deref(&self) -> &Self::Target {
+        &self.logon_guid
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct LogonId {
     pub logon_id: String,
+}
 
-    #[html(selector = "EventData > Data[Name=\"TerminalSessionId\"]", attr="inner")]
-    pub terminal_session_id: u16,
+impl Deref for LogonId {
+    type Target = str;
 
-    #[html(selector = "EventData > Data[Name=\"IntegrityLevel\"]", attr="inner")]
+    fn deref(&self) -> &str {
+        &self.logon_id
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct TerminalSessionId {
+    pub terminal_session_id: String,
+}
+
+impl Deref for TerminalSessionId {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.terminal_session_id
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct IntegrityLevel {
     pub integrity_level: String,
+}
 
-    #[html(selector = "EventData > Data[Name=\"Hashes\"]", attr="inner")]
+impl Deref for IntegrityLevel {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.integrity_level
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Hashes {
     pub hashes: String,
-
-    #[html(selector = "EventData > Data[Name=\"ParentProcessGuid\"]", attr="inner")]
-    pub parent_process_guid: String,
-
-    #[html(selector = "EventData > Data[Name=\"ParentProcessId\"]", attr="inner")]
-    pub parent_process_id: u64,
-
-    #[html(selector = "EventData > Data[Name=\"ParentImage\"]", attr="inner")]
-    pub parent_image: String,
-
-    #[html(selector = "[Name=\"ParentCommandLine\"]", attr="inner")]
-    pub parent_command_line: String,
 }
 
-#[derive(Debug, FromHtml, Clone)]
-pub struct FileCreateEvent {
-    #[html(selector = "System")]
-    pub header: SysmonSystemHeader,
+impl Deref for Hashes {
+    type Target = str;
 
-    #[html(selector = "EventData > Data[Name=\"UtcTime\"]", attr="inner")]
-    pub utc_time: String,
+    fn deref(&self) -> &str {
+        &self.hashes
+    }
+}
 
-    #[html(selector = "EventData > Data[Name=\"ProcessGuid\"]", attr="inner")]
-    pub process_guid: String,
 
-    #[html(selector = "EventData > Data[Name=\"ProcessId\"]", attr="inner")]
-    pub process_id: u64,
-
-    #[html(selector = "EventData > Data[Name=\"Image\"]", attr="inner")]
-    pub image: String,
-
-    #[html(selector = "EventData > Data[Name=\"TargetFilename\"]", attr="inner")]
+#[derive(Debug, Deserialize, Clone)]
+pub struct TargetFilename {
     pub target_filename: String,
+}
 
-    #[html(selector = "EventData > Data[Name=\"CreationUtcTime\"]", attr="inner")]
-    pub creation_utc_time: String,
+impl Deref for TargetFilename {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.target_filename
+    }
 }
 
 
-#[derive(Debug, FromHtml, Clone)]
-pub struct NetworkEvent {
-    #[html(selector = "System")]
-    pub header: SysmonSystemHeader,
+#[derive(Debug, Deserialize, Clone)]
+pub struct ProcessCreateEventData {
+    /// <Data Name="UtcTime">2017-04-28 22:08:22.025</Data>
+    pub utc_time: UtcTime,
+    /// <Data Name="ProcessGuid">{A23EAE89-BD56-5903-0000-0010E9D95E00}</Data>
+    pub process_guid: ProcessGuid,
+    /// <Data Name="ProcessId">6228</Data>
+    pub process_id: ProcessId,
+    /// <Data Name="Image">C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</Data>
+    pub image: Image,
+    /// <Data Name="CommandLine">"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --type=utility --lang=en-US --no-sandbox --service-request-channel-token=F47498BBA884E523FA93E623C4569B94 --mojo-platform-channel-handle=3432 /prefetch:8</Data>
+    pub command_line: CommandLine,
+    /// <Data Name="CurrentDirectory">C:\Program Files (x86)\Google\Chrome\Application\58.0.3029.81\</Data>
+    pub current_directory: CurrentDirectory,
+    /// <Data Name="User">LAB\rsmith</Data>
+    pub user: User,
+    /// <Data Name="LogonGuid">{A23EAE89-B357-5903-0000-002005EB0700}</Data>
+    pub logon_guid: LogonGuid,
+    /// <Data Name="LogonId">0x7eb05</Data>
+    pub logon_id: LogonId,
+    /// <Data Name="TerminalSessionId">1</Data>
+    pub terminal_session_id: TerminalSessionId,
+    /// <Data Name="IntegrityLevel">Medium</Data>
+    pub integrity_level: IntegrityLevel,
+    /// <Data Name="Hashes">SHA256=6055A20CF7EC81843310AD37700FF67B2CF8CDE3DCE68D54BA42934177C10B57</Data>
+    pub hashes: Hashes,
+    /// <Data Name="ParentProcessGuid">{A23EAE89-BD28-5903-0000-00102F345D00}</Data>
+    pub parent_process_guid: ProcessGuid,
+    /// <Data Name="ParentProcessId">13220</Data>
+    pub parent_process_id: ProcessId,
+    /// <Data Name="ParentImage">C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</Data>
+    pub parent_image: Image,
+    /// <Data Name="ParentCommandLine">"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" </Data>
+    pub parent_command_line: CommandLine,
+}
 
-    #[html(selector = "EventData > Data[Name=\"UtcTime\"]", attr="inner")]
-    pub utc_time: String,
+#[derive(Debug, Deserialize, Clone)]
+pub struct ProcessCreateEvent {
+    #[serde(rename = "System")]
+    pub system: System,
+    #[serde(rename = "EventData", deserialize_with="from_intermediary_data")]
+    pub event_data: ProcessCreateEventData,
+}
 
-    #[html(selector = "EventData > Data[Name=\"ProcessGuid\"]", attr="inner")]
-    pub process_guid: String,
 
-    #[html(selector = "EventData > Data[Name=\"ProcessId\"]", attr="inner")]
+
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct FileCreateEventData {
+    pub utc_time: UtcTime,
+    pub process_guid: ProcessGuid,
+    pub process_id: ProcessId,
+    pub image: Image,
+    pub target_filename: String,
+    pub creation_utc_time: UtcTime,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct FileCreateEvent {
+    #[serde(rename = "System")]
+    pub header: System,
+
+    #[serde(rename = "EventData", deserialize_with="from_intermediary_data")]
+    pub event_data: FileCreateEventData
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct NetworkEventData {
+    pub utc_time: UtcTime,
+    pub process_guid: ProcessGuid,
     pub process_id: u64,
-
-    #[html(selector = "EventData > Data[Name=\"Image\"]", attr="inner")]
-    pub image: String,
-
-    #[html(selector = "EventData > Data[Name=\"User\"]", attr="inner")]
-    pub user: String,
-
-    #[html(selector = "EventData > Data[Name=\"Protocol\"]", attr="inner")]
+    pub image: Image,
+    pub user: User,
     pub protocol: String,
-
-    #[html(selector = "EventData > Data[Name=\"Initiated\"]", attr="inner")]
     pub initiated: bool,
-
-    #[html(selector = "EventData > Data[Name=\"SourceIsIpv6\"]", attr="inner")]
     pub source_is_ipv6: String,
-
-    #[html(selector = "EventData > Data[Name=\"SourceIp\"]", attr="inner")]
     pub source_ip: String,
-
-    #[html(selector = "EventData > Data[Name=\"SourceHostname\"]", attr="inner")]
-    pub source_hostname: String,
-
-    #[html(selector = "EventData > Data[Name=\"SourcePort\"]", attr="inner")]
+    pub source_hostname: Option<String>,
     pub source_port: u16,
-
-    #[html(selector = "EventData > Data[Name=\"SourcePortName\"]", attr="inner")]
-    pub source_port_name: String,
-
-    #[html(selector = "EventData > Data[Name=\"DestinationIsIpv6\"]", attr="inner")]
+    pub source_port_name: Option<String>,
     pub destination_is_ipv6: String,
-
-    #[html(selector = "EventData > Data[Name=\"DestinationIp\"]", attr="inner")]
     pub destination_ip: String,
-
-    #[html(selector = "EventData > Data[Name=\"DestinationHostname\"]", attr="inner")]
-    pub destination_hostname: String,
-
-    #[html(selector = "EventData > Data[Name=\"DestinationPort\"]", attr="inner")]
+    pub destination_hostname: Option<String>,
     pub destination_port: u16,
+    pub destination_port_name: Option<String>,
+}
 
-    #[html(selector = "EventData > Data[Name=\"DestinationPortName\"]", attr="inner")]
-    pub destination_port_name: String,
+#[derive(Debug, Deserialize, Clone)]
+pub struct NetworkEvent {
+    #[serde(rename = "System")]
+    pub header: System,
+    #[serde(rename = "EventData", deserialize_with="from_intermediary_data")]
+    pub event_data: NetworkEventData,
+}
+
+impl TryFrom<IntermediaryEventData> for ProcessCreateEventData {
+    type Error = anyhow::Error;
+
+    fn try_from(inter: IntermediaryEventData) -> Result<Self> {
+        let mut m = HashMap::with_capacity(inter.data.len());
+
+        for data in inter.data {
+            if let Some(value) = data.value {
+                m.insert(data.name, value);
+            }
+        }
+
+        let process_id = get_or_err!(m, "ProcessId");
+        let process_id = process_id[1..process_id.len() - 1].parse()?;
+
+        let parent_process_id = get_or_err!(m, "ParentProcessId");
+        let parent_process_id = parent_process_id[1..parent_process_id.len() - 1].parse()?;
+
+
+        Ok(
+            ProcessCreateEventData {
+                utc_time: UtcTime {utc_time: get_or_err!(m, "UtcTime") },
+                process_guid: ProcessGuid {
+                    process_guid: uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?
+                },
+                process_id: ProcessId { process_id },
+                image: Image { image: get_or_err!(m, "Image") },
+                command_line: CommandLine { command_line: get_or_err!(m, "CommandLine") },
+                current_directory: CurrentDirectory { current_directory: get_or_err!(m, "CurrentDirectory") },
+                user: User { user: get_or_err!(m, "User") },
+                logon_guid: LogonGuid {
+                    logon_guid: uuid::Uuid::parse_str(&get_or_err!(m, "LogonGuid")[1..37])?
+                },
+                logon_id: LogonId { logon_id: get_or_err!(m, "LogonId") },
+                terminal_session_id: TerminalSessionId { terminal_session_id: get_or_err!(m, "TerminalSessionId") },
+                integrity_level: IntegrityLevel { integrity_level: get_or_err!(m, "IntegrityLevel") },
+                hashes: Hashes { hashes: get_or_err!(m, "Hashes") },
+                parent_process_guid: ProcessGuid {
+                    process_guid:  uuid::Uuid::parse_str(&get_or_err!(m, "ParentProcessGuid")[1..37])?
+                },
+                parent_process_id: ProcessId { process_id: parent_process_id},
+                parent_image: Image { image: get_or_err!(m, "ParentImage") },
+                parent_command_line: CommandLine { command_line: get_or_err!(m, "ParentCommandLine") },
+            }
+        )
+    }
+}
+
+impl TryFrom<IntermediaryEventData> for FileCreateEventData {
+    type Error = anyhow::Error;
+
+    fn try_from(inter: IntermediaryEventData) -> Result<Self> {
+        let mut m = HashMap::with_capacity(inter.data.len());
+
+        for data in inter.data {
+            if let Some(value) = data.value {
+                m.insert(data.name, value);
+            }
+        }
+
+        let process_id = get_or_err!(m, "ProcessId");
+        let process_id = process_id[1..process_id.len() - 1].parse()?;
+
+        Ok(
+            FileCreateEventData {
+                utc_time: UtcTime { utc_time: get_or_err!(m, "UtcTime") },
+                process_guid: ProcessGuid {
+                    process_guid:  uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?
+                },
+                process_id: ProcessId { process_id },
+                image: Image { image: get_or_err!(m, "Image") },
+                creation_utc_time: UtcTime { utc_time: get_or_err!(m, "CreationUtcTime") },
+                target_filename: get_or_err!(m, "TargetFilename"),
+            }
+        )
+    }
+}
+
+impl TryFrom<IntermediaryEventData> for NetworkEventData {
+    type Error = anyhow::Error;
+
+    fn try_from(inter: IntermediaryEventData) -> Result<Self> {
+        let mut m = HashMap::with_capacity(inter.data.len());
+
+        for data in inter.data {
+            if let Some(value) = data.value {
+                m.insert(data.name, value);
+            }
+        }
+
+
+        Ok(
+            NetworkEventData {
+                utc_time: UtcTime {utc_time: get_or_err!(m, "UtcTime")},
+                process_guid: ProcessGuid {
+                    process_guid:  uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?
+                },
+                process_id: get_or_err!(m, "ProcessId").parse()?,
+                image: Image { image: get_or_err!(m, "Image") },
+                user: User { user: get_or_err!(m, "User") },
+                protocol: get_or_err!(m, "Protocol"),
+                source_is_ipv6: get_or_err!(m, "SourceIsIpv6"),
+                source_ip: get_or_err!(m, "SourceIp"),
+                source_hostname: m.remove("SourceHostname"),
+                source_port_name: m.remove("SourcePortName"),
+                destination_is_ipv6: get_or_err!(m, "DestinationIsIpv6"),
+                destination_ip: get_or_err!(m, "DestinationIp"),
+                destination_hostname: m.remove("DestinationHostname"),
+                destination_port_name: m.remove("DestinationPortName"),
+                initiated: get_or_err!(m, "Initiated").parse()?,
+                source_port: get_or_err!(m, "SourcePort").parse()?,
+                destination_port: get_or_err!(m, "DestinationPort").parse()?,
+            }
+        )
+    }
+}
+
+fn from_intermediary_data<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+    where
+        D: Deserializer<'de>,
+        T: TryFrom<IntermediaryEventData>,
+{
+    let s: IntermediaryEventData = Deserialize::deserialize(deserializer)?;
+    T::try_from(s).map_err(|_| SerdeError::custom("Failed to deserialize") )
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Data {
+    #[serde(rename = "Name")]
+    pub name: String,
+    #[serde(rename = "$value")]
+    pub value: Option<String>,
+
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct IntermediaryEventData {
+    #[serde(rename = "Data")]
+    pub data: Vec<Data>
 }
 
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     const NETWORK_EVENT: &str = r#"
@@ -340,19 +737,43 @@ mod tests {
     </Event>
     "#;
 
+    const HEADER: &'static str = r#"
+        <System>
+            <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385F-C22A-43E0-BF4C-06F5698FFBD9}" />
+            <EventID>1</EventID>
+            <Version>5</Version>
+            <Level>4</Level>
+            <Task>1</Task>
+            <Opcode>0</Opcode>
+            <Keywords>0x8000000000000000</Keywords>
+            <TimeCreated SystemTime="2017-04-28T22:08:22.025812200Z" />
+            <EventRecordID>9947</EventRecordID>
+            <Correlation />
+            <Execution ProcessID="3216" ThreadID="3964" />
+            <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+            <Computer>rfsH.lab.local</Computer>
+            <Security UserID="S-1-5-18" />
+        </System>
+    "#;
+
+    #[test]
+    fn header() {
+        serde_xml_rs::from_str::<System>(HEADER).unwrap();
+    }
+
     #[test]
     fn process_create_event() {
-        ProcessCreateEvent::from_html(PROCESS_CREATE).unwrap();
+        serde_xml_rs::from_str::<ProcessCreateEvent>(PROCESS_CREATE).unwrap();
     }
 
     #[test]
     fn file_create_event() {
-        FileCreateEvent::from_html(FILE_CREATE).unwrap();
+        serde_xml_rs::from_str::<FileCreateEvent>(FILE_CREATE).unwrap();
     }
 
     #[test]
     fn network_event() {
-        NetworkEvent::from_html(NETWORK_EVENT).unwrap();
+        serde_xml_rs::from_str::<NetworkEvent>(NETWORK_EVENT).unwrap();
     }
 
     #[test]
