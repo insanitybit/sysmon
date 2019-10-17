@@ -207,6 +207,15 @@ pub struct UtcTime {
     pub utc_time: String
 }
 
+impl Deref for UtcTime {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.utc_time
+    }
+}
+
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct ProcessGuid {
     pub process_guid: uuid::Uuid,
@@ -751,32 +760,32 @@ mod tests {
         </System>
     "#;
 
-//    #[test]
-//    fn header() {
-//        serde_xml_rs::from_str::<System>(HEADER).unwrap();
-//    }
-//
-//    #[test]
-//    fn process_create_event() {
-//        serde_xml_rs::from_str::<ProcessCreateEvent>(PROCESS_CREATE).unwrap();
-//    }
-//
-//    #[test]
-//    fn file_create_event() {
-//        serde_xml_rs::from_str::<FileCreateEvent>(FILE_CREATE).unwrap();
-//    }
-//
-//    #[test]
-//    fn network_event() {
-//        serde_xml_rs::from_str::<NetworkEvent>(NETWORK_EVENT).unwrap();
-//    }
-//
-//    #[test]
-//    fn event_type() {
-//        assert!(Event::from_str(NETWORK_EVENT).unwrap().is_outbound_network());
-//        assert!(Event::from_str(FILE_CREATE).unwrap().is_file_create());
-//        assert!(Event::from_str(PROCESS_CREATE).unwrap().is_process_create());
-//    }
+    #[test]
+    fn header() {
+        serde_xml_rs::from_str::<System>(HEADER).unwrap();
+    }
+
+    #[test]
+    fn process_create_event() {
+        serde_xml_rs::from_str::<ProcessCreateEvent>(PROCESS_CREATE).unwrap();
+    }
+
+    #[test]
+    fn file_create_event() {
+        serde_xml_rs::from_str::<FileCreateEvent>(FILE_CREATE).unwrap();
+    }
+
+    #[test]
+    fn network_event() {
+        serde_xml_rs::from_str::<NetworkEvent>(NETWORK_EVENT).unwrap();
+    }
+
+    #[test]
+    fn event_type() {
+        assert!(Event::from_str(NETWORK_EVENT).unwrap().is_outbound_network());
+        assert!(Event::from_str(FILE_CREATE).unwrap().is_file_create());
+        assert!(Event::from_str(PROCESS_CREATE).unwrap().is_process_create());
+    }
 
     #[test]
     fn parse_all() -> Result<()> {
