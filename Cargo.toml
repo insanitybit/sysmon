@@ -1,6 +1,6 @@
 [package]
 name = "sysmon"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 description = "Type definitions and (de)serialization support for Sysmon events"
 license = "MIT OR Apache-2.0"

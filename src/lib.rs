@@ -441,7 +441,7 @@ pub struct FileCreateEventData {
 #[derive(Debug, Deserialize, Clone)]
 pub struct FileCreateEvent {
     #[serde(rename = "System")]
-    pub header: System,
+    pub system: System,
 
     #[serde(rename = "EventData", deserialize_with="from_intermediary_data")]
     pub event_data: FileCreateEventData
@@ -472,7 +472,7 @@ pub struct NetworkEventData {
 #[derive(Debug, Deserialize, Clone)]
 pub struct NetworkEvent {
     #[serde(rename = "System")]
-    pub header: System,
+    pub system: System,
     #[serde(rename = "EventData", deserialize_with="from_intermediary_data")]
     pub event_data: NetworkEventData,
 }
@@ -761,7 +761,7 @@ mod tests {
     "#;
 
     #[test]
-    fn header() {
+    fn system() {
         serde_xml_rs::from_str::<System>(HEADER).unwrap();
     }
 
