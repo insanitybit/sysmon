@@ -237,19 +237,6 @@ impl ProcessGuid {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct ProcessId {
-    pub process_id: u64,
-}
-
-impl Deref for ProcessId {
-    type Target = u64;
-
-    fn deref(&self) -> &u64 {
-        &self.process_id
-    }
-}
-
-#[derive(Debug, Deserialize, Clone)]
 pub struct Image {
     pub image: String,
 }
@@ -388,7 +375,7 @@ pub struct ProcessCreateEventData {
     /// <Data Name="ProcessGuid">{A23EAE89-BD56-5903-0000-0010E9D95E00}</Data>
     pub process_guid: ProcessGuid,
     /// <Data Name="ProcessId">6228</Data>
-    pub process_id: ProcessId,
+    pub process_id: u64,
     /// <Data Name="Image">C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</Data>
     pub image: Image,
     /// <Data Name="CommandLine">"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" --type=utility --lang=en-US --no-sandbox --service-request-channel-token=F47498BBA884E523FA93E623C4569B94 --mojo-platform-channel-handle=3432 /prefetch:8</Data>
@@ -410,7 +397,7 @@ pub struct ProcessCreateEventData {
     /// <Data Name="ParentProcessGuid">{A23EAE89-BD28-5903-0000-00102F345D00}</Data>
     pub parent_process_guid: ProcessGuid,
     /// <Data Name="ParentProcessId">13220</Data>
-    pub parent_process_id: ProcessId,
+    pub parent_process_id: u64,
     /// <Data Name="ParentImage">C:\Program Files (x86)\Google\Chrome\Application\chrome.exe</Data>
     pub parent_image: Image,
     /// <Data Name="ParentCommandLine">"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" </Data>
@@ -432,7 +419,7 @@ pub struct ProcessCreateEvent {
 pub struct FileCreateEventData {
     pub utc_time: UtcTime,
     pub process_guid: ProcessGuid,
-    pub process_id: ProcessId,
+    pub process_id: u64,
     pub image: Image,
     pub target_filename: String,
     pub creation_utc_time: UtcTime,
@@ -505,7 +492,7 @@ impl TryFrom<IntermediaryEventData> for ProcessCreateEventData {
                 process_guid: ProcessGuid {
                     process_guid: uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?
                 },
-                process_id: ProcessId { process_id },
+                process_id,
                 image: Image { image: get_or_err!(m, "Image") },
                 command_line: CommandLine { command_line: get_or_err!(m, "CommandLine") },
                 current_directory: CurrentDirectory { current_directory: get_or_err!(m, "CurrentDirectory") },
@@ -520,7 +507,7 @@ impl TryFrom<IntermediaryEventData> for ProcessCreateEventData {
                 parent_process_guid: ProcessGuid {
                     process_guid:  uuid::Uuid::parse_str(&get_or_err!(m, "ParentProcessGuid")[1..37])?
                 },
-                parent_process_id: ProcessId { process_id: parent_process_id},
+                parent_process_id,
                 parent_image: Image { image: get_or_err!(m, "ParentImage") },
                 parent_command_line: CommandLine { command_line: get_or_err!(m, "ParentCommandLine") },
             }
@@ -549,7 +536,7 @@ impl TryFrom<IntermediaryEventData> for FileCreateEventData {
                 process_guid: ProcessGuid {
                     process_guid:  uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?
                 },
-                process_id: ProcessId { process_id },
+                process_id,
                 image: Image { image: get_or_err!(m, "Image") },
                 creation_utc_time: UtcTime { utc_time: get_or_err!(m, "CreationUtcTime") },
                 target_filename: get_or_err!(m, "TargetFilename"),
