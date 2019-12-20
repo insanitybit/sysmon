@@ -556,9 +556,7 @@ impl TryFrom<IntermediaryEventData> for NetworkEventData {
                 m.insert(data.name, value);
             }
         }
-
-        dbg!(&m);
-
+        
         let user = m.remove("User")
             .map(|user| User { user });
 
