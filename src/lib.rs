@@ -37,7 +37,7 @@ macro_rules! get_or_err {
     };
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 #[derive(is_enum_variant)]
 pub enum Event {
     ProcessCreate(ProcessCreateEvent),
@@ -71,7 +71,7 @@ impl Event {
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Provider {
     #[serde(rename = "Name")]
     pub provider_name: String,
@@ -80,58 +80,58 @@ pub struct Provider {
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct EventId {
     #[serde(rename = "$value")]
     pub event_id: u8,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Level {
     #[serde(rename = "$value")]
     pub level: String,
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Task {
     #[serde(rename = "$value")]
     pub task: String,
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Version {
     #[serde(rename = "$value")]
     pub version: String,
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Opcode {
     #[serde(rename = "$value")]
     pub opcode: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Keywords {
     #[serde(rename = "$value")]
     pub keywords: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct TimeCreated {
     #[serde(rename = "SystemTime")]
     pub system_time: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct EventRecordId {
     #[serde(rename = "$value")]
     pub event_record_id: u32,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Execution {
     #[serde(rename = "ProcessID")]
     pub process_id: String,
@@ -139,25 +139,25 @@ pub struct Execution {
     pub thread_id: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Channel {
     #[serde(rename = "$value")]
     pub value: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Computer {
     #[serde(rename = "$value")]
     pub computer: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Security {
     #[serde(rename = "UserID")]
     pub security: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct System {
     /// <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385F-C22A-43E0-BF4C-06F5698FFBD9}" />
     #[serde(rename = "Provider")]
@@ -201,7 +201,7 @@ pub struct System {
     pub security: Security,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct UtcTime {
     #[serde(rename = "$value")]
     pub utc_time: String
@@ -216,7 +216,7 @@ impl Deref for UtcTime {
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct ProcessGuid {
     pub process_guid: uuid::Uuid,
 }
@@ -236,7 +236,7 @@ impl ProcessGuid {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Image {
     pub image: String,
 }
@@ -249,7 +249,7 @@ impl Deref for Image {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct CommandLine {
     pub command_line: String,
 }
@@ -262,7 +262,7 @@ impl Deref for CommandLine {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct CurrentDirectory {
     pub current_directory: String,
 }
@@ -275,7 +275,7 @@ impl Deref for CurrentDirectory {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct User {
     pub user: String,
 }
@@ -288,7 +288,7 @@ impl Deref for User {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct LogonGuid {
     pub logon_guid: uuid::Uuid,
 }
@@ -301,7 +301,7 @@ impl Deref for LogonGuid {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct LogonId {
     pub logon_id: String,
 }
@@ -314,7 +314,7 @@ impl Deref for LogonId {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct TerminalSessionId {
     pub terminal_session_id: String,
 }
@@ -327,7 +327,7 @@ impl Deref for TerminalSessionId {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct IntegrityLevel {
     pub integrity_level: String,
 }
@@ -340,7 +340,7 @@ impl Deref for IntegrityLevel {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Hashes {
     pub hashes: String,
 }
@@ -354,7 +354,7 @@ impl Deref for Hashes {
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct TargetFilename {
     pub target_filename: String,
 }
@@ -368,7 +368,7 @@ impl Deref for TargetFilename {
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct ProcessCreateEventData {
     /// <Data Name="UtcTime">2017-04-28 22:08:22.025</Data>
     pub utc_time: UtcTime,
@@ -404,7 +404,7 @@ pub struct ProcessCreateEventData {
     pub parent_command_line: CommandLine,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct ProcessCreateEvent {
     #[serde(rename = "System")]
     pub system: System,
@@ -415,7 +415,7 @@ pub struct ProcessCreateEvent {
 
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct FileCreateEventData {
     pub utc_time: UtcTime,
     pub process_guid: ProcessGuid,
@@ -425,7 +425,7 @@ pub struct FileCreateEventData {
     pub creation_utc_time: UtcTime,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct FileCreateEvent {
     #[serde(rename = "System")]
     pub system: System,
@@ -435,7 +435,7 @@ pub struct FileCreateEvent {
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct NetworkEventData {
     pub utc_time: UtcTime,
     pub process_guid: ProcessGuid,
@@ -456,7 +456,7 @@ pub struct NetworkEventData {
     pub destination_port_name: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct NetworkEvent {
     #[serde(rename = "System")]
     pub system: System,
@@ -595,7 +595,7 @@ fn from_intermediary_data<'de, D, T>(deserializer: D) -> Result<T, D::Error>
     T::try_from(s).map_err(|_| SerdeError::custom("Failed to deserialize") )
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Data {
     #[serde(rename = "Name")]
     pub name: String,
@@ -605,7 +605,7 @@ pub struct Data {
 }
 
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Hash)]
 pub struct IntermediaryEventData {
     #[serde(rename = "Data")]
     pub data: Vec<Data>
